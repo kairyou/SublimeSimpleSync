@@ -57,6 +57,8 @@ Files are saved to remote server automatically when you save them locally. In ca
 * [gfreezy](https://github.com/gfreezy)
 * [kairyou](https://github.com/kairyou)
 
+* [中文文档](http://www.fantxi.com/blog/archives/sublime-simple-sync/)
+
 ## License
 
 Copyright (c) 2009-2012 Tan Nhu
