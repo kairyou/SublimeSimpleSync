@@ -13,8 +13,8 @@ Simple Sublime Text 2 plugin for SSH and local syncing.
 Clone this project into your ST2 Packages folder, for example:
 
 ``` bash
-cd "/Users/tnhu/Library/Application Support/Sublime Text 2/Packages"
-git clone https://github.com/tnhu/SimpleSync.git
+cd [...]/Sublime Text 2/Packages
+git clone https://github.com/kairyou/SublimeSimpleSync.git SimpleSync
 ```
 
 ### Using ST2 Package Control
