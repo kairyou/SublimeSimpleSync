@@ -138,12 +138,19 @@ class ScpCopier(threading.Thread, syncCommand):
             if self.debug:
                 # for console.log
                 p = subprocess.Popen(args, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+                msg = ''
+                def showMsg():
+                    # sublime.status_message(msg)
+                    sublime.message_dialog(msg)
+                
                 while True:
                     retcode = p.poll()
                     buff = p.stdout.readline()
                     if buff:
+                        msg += buff
                         print buff
                     if (retcode is not None):
+                        sublime.set_timeout(showMsg, 1)
                         break
             else:
                 retcode = subprocess.call(args)
