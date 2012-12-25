@@ -157,6 +157,7 @@ class ScpCopier(threading.Thread, syncCommand):
                 print (retcode)
 
         except (Exception) as (exception):
+            # Alert "SimpleSync: No file_name", if the file size is zero.
             sublime.error_message(PACKAGE_NAME + ': ' + str(exception))
 
 # LocalCopier does local copying using threading to avoid UI blocking
