@@ -104,34 +104,36 @@ class ScpCopier(threading.Thread, syncCommand):
 
     def run(self):
         packageDir = os.path.join(sublime.packages_path(), PACKAGE_NAME)
-        remote  = self.username + "@" + self.host + ":" + self.remoteFile
         # for windows
-        remote = remote.replace('\\', '/').replace('//', '/')
-        ext = []
-        if self.password:
-            ext = ["-pw", self.password]
+        self.remoteFile = self.remoteFile.replace('\\', '/').replace('//', '/')
+        remote  = self.username + "@" + self.host + ":" + self.remoteFile
 
         print "SimpleSync: ", self.localFile, " -> ", self.remoteFile
 
-        ext.extend(["-r", "-P", str(self.port), self.localFile, remote])
+        pw = []
+        if self.password:
+            pw = ["-pw", self.password]
+
+        ext = ["-r", "-P", str(self.port), self.localFile, remote]
 
         if OS == 'Windows':
             # cmd = os.environ['SYSTEMROOT'] + '\\System32\\cmd.exe'
 
             scp = os.path.join(packageDir, 'pscp.exe')
             args = [scp]
-            # args = [scp, "-v"] # show message
-            args.extend(ext)
+                # args = [scp, "-v"] # show message
 
             # run with .bat
             # scp = os.path.join(packageDir, 'sync.bat')
             # args = [scp]
-            # ext = ' '.join(ext)
-            # args.extend([packageDir, ext])
+            # pw.extend(ext)
+            # pw = ' '.join(pw)
+            # args.extend([packageDir, pw])
         else:
             args = ["scp"]
-            args.extend(ext)
-       
+
+        args.extend(pw)
+        args.extend(ext)
         print '*********', ' '.join(args)
 
         # return;
@@ -140,13 +142,21 @@ class ScpCopier(threading.Thread, syncCommand):
                 # for console.log
                 p = subprocess.Popen(args, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
                 msg = ''
-                def showMsg():
-                    # sublime.status_message(msg)
-                    sublime.message_dialog(msg)
+                def syncFolder():
+                    self.localFile = os.path.dirname(self.localFile)
+                    self.remoteFile = os.path.dirname(self.remoteFile)
+                    self.remoteFile = os.path.dirname(self.remoteFile)
+                    # print self.localFile, ',', self.remoteFile
+                    ScpCopier(self.host, self.username, self.password, self.localFile, self.remoteFile, self.port).start();
 
-                    # m = re.search('no such file or directory', msg);
-                    # if m is not None:
+                def showMsg():
+                    m = re.search('no such file or directory', msg);
+                    if m is not None:
                         # do something
+                        syncFolder()
+                    else:
+                        # sublime.status_message(msg)
+                        sublime.message_dialog(msg)
 
                 while True:
                     retcode = p.poll()
@@ -160,7 +170,7 @@ class ScpCopier(threading.Thread, syncCommand):
             else:
                 retcode = subprocess.call(args)
                 print (retcode)
-                if retcode > 0: # error
+                if retcode != 0: # error
                     sublime.message_dialog('sync failed')
 
         except (Exception) as (exception):
