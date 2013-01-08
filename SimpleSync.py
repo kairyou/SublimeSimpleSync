@@ -133,6 +133,7 @@ class ScpCopier(threading.Thread, syncCommand):
             args.extend(ext)
        
         print '*********', ' '.join(args)
+
         # return;
         try:
             if self.debug:
@@ -142,7 +143,11 @@ class ScpCopier(threading.Thread, syncCommand):
                 def showMsg():
                     # sublime.status_message(msg)
                     sublime.message_dialog(msg)
-                
+
+                    # m = re.search('no such file or directory', msg);
+                    # if m is not None:
+                        # do something
+
                 while True:
                     retcode = p.poll()
                     buff = p.stdout.readline()
@@ -155,6 +160,8 @@ class ScpCopier(threading.Thread, syncCommand):
             else:
                 retcode = subprocess.call(args)
                 print (retcode)
+                if retcode > 0: # error
+                    sublime.message_dialog('sync failed')
 
         except (Exception) as (exception):
             # Alert "SimpleSync: No file_name", if the file size is zero.
@@ -181,9 +188,19 @@ class LocalCopier(threading.Thread, syncCommand):
         # args = [cmd, '/c', 'copy', '/y']
 
         # subprocess.call(args, shell=True)
-        args = ['copy', '/y']
+        # args = ['copy', '/y']
+        args = ['xcopy', '/y', '/e', '/h']
+
+        # folder path
+        # print os.path.split(self.remoteFile)[0]
+        # print os.path.dirname(self.remoteFile)
+        # print re.sub(r'\\[^\\]*$', '', self.remoteFile)
+
+        # print '*********', self.remoteFile
+        # replace C:\test/\test\ -> C:\test\test\
+        self.remoteFile = self.remoteFile.replace('/\\', '\\')
         # replace /path/file.ext -> /path
-        self.remoteFile = re.sub(r'/.*', '', self.remoteFile)
+        self.remoteFile = os.path.dirname(self.remoteFile) + '\\'
         # print '*********', self.remoteFile
     else:
         args = ['cp']
