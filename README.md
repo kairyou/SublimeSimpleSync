@@ -1,6 +1,6 @@
 # SimpleSync
 
-Simple Sublime Text 2 plugin for SSH and local syncing.
+Simple Sublime Text 2/3 plugin for SSH and local syncing.
 
 ## Before you start
 
@@ -10,10 +10,10 @@ Simple Sublime Text 2 plugin for SSH and local syncing.
 
 ### Manually
 
-Clone this project into your ST2 Packages folder, for example:
+Clone this project into your ST2/ST3 Packages folder, for example:
 
 ``` bash
-cd [...]/Sublime Text 2/Packages
+cd [...]/Sublime Text/Packages
 git clone https://github.com/kairyou/SublimeSimpleSync.git SimpleSync
 ```
 
@@ -43,7 +43,7 @@ Sample settings:
     "remote"   : "/home/tnhu/workspace/trunk"
   }, {
     "type"     : "local",
-    "local"    : "/Users/tnhu/Library/Application Support/Sublime Text 2/Packages/SimpleSync",
+    "local"    : "/Users/tnhu/Library/Application Support/Sublime Text/Packages/SimpleSync",
     "remote"   : "/Users/tnhu/Dropbox/projects/SimpleSync"
   }]
 }
