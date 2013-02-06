@@ -114,7 +114,7 @@ class ScpCopier(threading.Thread, syncCommand):
         if self.password:
             pw = ['-pw', self.password]
 
-        ext = ['-r', '-P', str(self.port), self.localFile, remote]
+        ext = ['-r', '-C', '-P', str(self.port), self.localFile, remote]
 
         if OS == 'Windows':
             # cmd = os.environ['SYSTEMROOT'] + '\\System32\\cmd.exe'
