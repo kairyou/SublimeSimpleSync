@@ -9,9 +9,9 @@
     "children": [{
       "command": "open_file",
       "args": {
-        "file": "${packages}/SimpleSync/SimpleSync.sublime-settings"
+        "file": "${packages}/SublimeSimpleSync/SublimeSimpleSync.sublime-settings"
       },
-      "caption": "SimpleSync Settings"
+      "caption": "#SublimeSimpleSync Settings#"
     }]
   }]
 }]

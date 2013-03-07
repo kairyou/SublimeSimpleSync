@@ -9,9 +9,9 @@ import subprocess
 import threading
 import re
 import sublime, sublime_plugin
-
+print(os.path.join(sublime.packages_path(), 'Default'))
 # Caches
-PACKAGE_NAME = 'SimpleSync' #__name__ # ST3 bug with __name__
+PACKAGE_NAME = 'SublimeSimpleSync' #__name__ # ST3 bug with __name__
 PACKAGE_SETTINGS = PACKAGE_NAME + '.sublime-settings'
 OS = platform.system()
 # print('*********', os.name, sys.platform, OS)
@@ -59,7 +59,7 @@ class syncCommand():
                     LocalCopier(localFile, remoteFile).start()
 
 # { "keys": ["alt+s"], "command": "simple_sync"},
-class SimpleSyncCommand(sublime_plugin.WindowCommand, syncCommand):
+class SublimeSimpleSyncCommand(sublime_plugin.WindowCommand, syncCommand):
     def run(self):
         settings = self.getSetting()
         rules = settings.get('rules')
@@ -77,7 +77,7 @@ class SimpleSync(sublime_plugin.EventListener, syncCommand):
         settings = self.getSetting()
         # print('********', settings)
 
-        config = settings.get('config', False)
+        config = settings.get('config', [])
         autoSycn = config['autoSync'] if 'autoSync' in config else False
         localFile =  view.file_name() # self.getPath() # 'SimpleSync' object has no attribute 'window'
         # print('********', localFile)
