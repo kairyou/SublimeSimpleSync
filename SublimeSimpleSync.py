@@ -15,7 +15,7 @@ PACKAGE_NAME = 'SublimeSimpleSync' #__name__ # ST3 bug with __name__
 PACKAGE_SETTINGS = PACKAGE_NAME + '.sublime-settings'
 OS = platform.system()
 # print('*********', os.name, sys.platform, OS)
-
+IS_GTE_ST3 = int(sublime.version()[0]) >= 3
 
 class syncCommand():
 
@@ -161,6 +161,8 @@ class ScpCopier(threading.Thread, syncCommand):
                 while True:
                     retcode = p.poll()
                     buff = p.stdout.readline()
+                    if IS_GTE_ST3:
+                        buff = buff.decode('utf-8')
                     if buff:
                         msg += buff
                         print(buff)
@@ -175,7 +177,8 @@ class ScpCopier(threading.Thread, syncCommand):
 
         except Exception as exception:
             # Alert "SimpleSync: No file_name", if the file size is zero.
-            sublime.error_message(PACKAGE_NAME + ': ' + str(exception))
+            # print(exception);
+            sublime.error_message(PACKAGE_NAME + ': ' + exception)
 
 # LocalCopier does local copying using threading to avoid UI blocking
 class LocalCopier(threading.Thread, syncCommand):
@@ -223,4 +226,5 @@ class LocalCopier(threading.Thread, syncCommand):
             # print(retcode) 
 
     except Exception as exception:
+        # print(exception);
         sublime.error_message(PACKAGE_NAME + ': ' + str(exception))
