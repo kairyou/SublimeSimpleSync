@@ -44,16 +44,17 @@ class syncCommand():
     # support multiple rules
     def syncFile(self, localFile, rules):
         syncItems = self.getSyncItem(localFile, rules)
-        print('+++ syncCommand: ', syncItems)
+        # print('+++ syncCommand: ', syncItems)
         if (len(syncItems) > 0):
             for item in syncItems:
                 # fix path(/)
-                remoteFile = localFile.replace(item['local'], item['remote'] + '/')
+                # remoteFile = localFile.replace(item['local'], item['remote'] + '/')
+                relPath = localFile.replace(item['local'], '')
+                remoteFile = item['remote'] + '/' + relPath;
                 # print('********', remoteFile)
                 if (item['type'] == 'ssh'):
                     password = item['password'] if 'password' in item else ''
-                    # self.scpCopier(item['host'], item["username"], password, localFile, remoteFile, port=item['port'])
-                    ScpCopier(item['host'], item['username'], password, localFile, remoteFile, port=item['port']).start()
+                    ScpCopier(item['host'], item['username'], password, localFile, remoteFile, port=item['port'], relPath=relPath).start()
                 elif (item['type'] == 'local'):
                     # self.localCopier(localFile, remoteFile)
                     LocalCopier(localFile, remoteFile).start()
@@ -88,13 +89,15 @@ class SimpleSync(sublime_plugin.EventListener, syncCommand):
 
 # ScpCopier does actual copying using threading to avoid UI blocking
 class ScpCopier(threading.Thread, syncCommand):
-    def __init__(self, host, username, password, localFile, remoteFile, port=22):
-        self.host        = host
-        self.port        = port
-        self.username    = username
-        self.password    = password
-        self.localFile  = localFile
+    def __init__(self, host, username, password, localFile, remoteFile, port=22, relPath=''):
+        self.host = host
+        self.port = port
+        self.username = username
+        self.password = password
+        self.localFile = localFile
         self.remoteFile = remoteFile
+        self.relPath = relPath
+        # print('relative path:', relPath)
 
         settings = self.getSetting()
         config = settings.get('config')
@@ -108,7 +111,7 @@ class ScpCopier(threading.Thread, syncCommand):
         self.remoteFile = self.remoteFile.replace('\\', '/').replace('//', '/')
         remote  = self.username + '@' + self.host + ':' + self.remoteFile
 
-        print('SimpleSync: ', self.localFile, ' -> ', self.remoteFile)
+        # print('SimpleSync: ', self.localFile, ' -> ', self.remoteFile)
 
         pw = []
         if self.password:
@@ -134,41 +137,35 @@ class ScpCopier(threading.Thread, syncCommand):
 
         args.extend(pw)
         args.extend(ext)
-        print('*********', ' '.join(args))
+        print('SimpleSync: ', ' '.join(args))
 
         # return
         try:
             if self.debug:
                 # for console.log
                 p = subprocess.Popen(args, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
-                msg = ''
+                result = ''
                 def syncFolder():
                     self.localFile = os.path.dirname(self.localFile)
-                    self.remoteFile = os.path.dirname(self.remoteFile)
-                    self.remoteFile = os.path.dirname(self.remoteFile)
+                    self.remoteFile = os.path.dirname(os.path.dirname(self.remoteFile))
                     # print(self.localFile, ',', self.remoteFile)
                     ScpCopier(self.host, self.username, self.password, self.localFile, self.remoteFile, self.port).start()
 
-                def showMsg():
-                    m = re.search('no such file or directory', msg)
-                    if m is not None:
-                        # do something
-                        syncFolder()
+                def showMsg(msg):
+                    error_msg = 'no such file or directory'
+                    m = re.search(error_msg, msg)
+                    if m is not None: # do something
+                        if sublime.ok_cancel_dialog(error_msg + '\r\n' + self.relPath + '\r\n' +'* Are you want to sync parent folder?'):
+                            syncFolder()
                     else:
                         # sublime.status_message(msg)
                         sublime.message_dialog(msg)
 
-                while True:
-                    retcode = p.poll()
-                    buff = p.stdout.readline()
-                    if IS_GTE_ST3:
-                        buff = buff.decode('utf-8')
-                    if buff:
-                        msg += buff
-                        print(buff)
-                    if (retcode is not None):
-                        sublime.set_timeout(showMsg, 1)
-                        break
+                result = p.stdout.read().decode('utf-8');
+                #     if IS_GTE_ST3:
+                #         buff = buff.decode('utf-8')
+                # print(result)
+                showMsg(result)
             else:
                 retcode = subprocess.call(args)
                 print(retcode)
@@ -193,7 +190,7 @@ class LocalCopier(threading.Thread, syncCommand):
     threading.Thread.__init__(self)
 
   def run(self):
-    print('SimpleSync: ', self.localFile, ' -> ', self.remoteFile)
+    # print('SimpleSync: ', self.localFile, ' -> ', self.remoteFile)
 
     if OS == 'Windows':
         # subprocess.call(args)
@@ -219,7 +216,7 @@ class LocalCopier(threading.Thread, syncCommand):
         args = ['cp']
     args.extend([self.localFile, self.remoteFile])
 
-    print('*********', ' '.join(args))
+    print('SimpleSync: ', ' '.join(args))
     # return
     try:
         retcode = subprocess.call(args, shell=True) 
