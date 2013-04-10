@@ -1,6 +1,6 @@
 # SublimeSimpleSync
 
-Simple Sublime Text 2 plugin for SSH and local syncing.
+Simple Sublime Text 2/3 plugin for SSH and local syncing.
 
 ## Before you start
 
