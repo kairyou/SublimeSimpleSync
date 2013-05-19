@@ -4,18 +4,24 @@
 # based on https://github.com/tnhu/SimpleSync
 #
 
-import os, sys, platform
+import os
+# import sys
+import platform
 import subprocess
 import threading
-import re
-import sublime, sublime_plugin
+# import re
+import sublime
+import sublime_plugin
 print(os.path.join(sublime.packages_path(), 'Default'))
+
 # Caches
-PACKAGE_NAME = 'SublimeSimpleSync' #__name__ # ST3 bug with __name__
+#__name__ # ST3 bug with __name__
+PACKAGE_NAME = 'SublimeSimpleSync'
 PACKAGE_SETTINGS = PACKAGE_NAME + '.sublime-settings'
 OS = platform.system()
 # print('*********', os.name, sys.platform, OS)
 IS_GTE_ST3 = int(sublime.version()[0]) >= 3
+
 
 class syncCommand():
 
@@ -36,7 +42,7 @@ class syncCommand():
         ret = []
         # print(localFile, rules)
         for item in rules:
-            # print(item)
+            # print(localFile.startswith(item['local']), localFile, item['local'])
             if localFile.startswith(item['local']):
                 ret += [item]
         return ret
@@ -48,18 +54,16 @@ class syncCommand():
         if (len(syncItems) > 0):
             for item in syncItems:
                 # fix path(/)
-                # remoteFile = localFile.replace(item['local'], item['remote'] + '/')
                 relPath = localFile.replace(item['local'], '')
-                remoteFile = item['remote'] + '/' + relPath;
+                remoteFile = item['remote'] + '/' + relPath
                 # print('********', remoteFile)
                 if (item['type'] == 'ssh'):
                     password = item['password'] if 'password' in item else ''
                     ScpCopier(item['host'], item['username'], password, localFile, remoteFile, port=item['port'], relPath=relPath).start()
                 elif (item['type'] == 'local'):
-                    # self.localCopier(localFile, remoteFile)
                     LocalCopier(localFile, remoteFile).start()
 
-# { "keys": ["alt+s"], "command": "simple_sync"},
+
 class SublimeSimpleSyncCommand(sublime_plugin.WindowCommand, syncCommand):
     def run(self):
         settings = self.getSetting()
@@ -71,8 +75,9 @@ class SublimeSimpleSyncCommand(sublime_plugin.WindowCommand, syncCommand):
         # print('********', localFile)
         self.syncFile(localFile, rules)
 
+
 # auto run, sublime_plugin.EventListener
-class SimpleSync(sublime_plugin.EventListener, syncCommand):  
+class SimpleSync(sublime_plugin.EventListener, syncCommand):
     # on save
     def on_post_save(self, view):
         settings = self.getSetting()
@@ -80,12 +85,13 @@ class SimpleSync(sublime_plugin.EventListener, syncCommand):
 
         config = settings.get('config', [])
         autoSycn = config['autoSync'] if 'autoSync' in config else False
-        localFile =  view.file_name() # self.getPath() # 'SimpleSync' object has no attribute 'window'
+        localFile = view.file_name()
         # print('********', localFile)
 
         if autoSycn:
             rules = settings.get('rules')
             self.syncFile(localFile, rules)
+
 
 # ScpCopier does actual copying using threading to avoid UI blocking
 class ScpCopier(threading.Thread, syncCommand):
@@ -109,14 +115,11 @@ class ScpCopier(threading.Thread, syncCommand):
         packageDir = os.path.join(sublime.packages_path(), PACKAGE_NAME)
         # for windows
         self.remoteFile = self.remoteFile.replace('\\', '/').replace('//', '/')
-        remote  = self.username + '@' + self.host + ':' + self.remoteFile
+        remote = self.username + '@' + self.host + ':' + self.remoteFile
 
         # print('SimpleSync: ', self.localFile, ' -> ', self.remoteFile)
 
         pw = []
-        if self.password:
-            pw = ['-pw', self.password]
-
         ext = ['-r', '-C', '-P', str(self.port), self.localFile, remote]
 
         if OS == 'Windows':
@@ -132,10 +135,12 @@ class ScpCopier(threading.Thread, syncCommand):
             # pw.extend(ext)
             # pw = ' '.join(pw)
             # args.extend([packageDir, pw])
+            if self.password:
+                pw = ['-pw', self.password]
+            args.extend(pw)
         else:
             args = ['scp']
 
-        args.extend(pw)
         args.extend(ext)
         print('SimpleSync: ', ' '.join(args))
 
@@ -145,6 +150,7 @@ class ScpCopier(threading.Thread, syncCommand):
                 # for console.log
                 p = subprocess.Popen(args, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
                 result = ''
+
                 def syncFolder():
                     self.localFile = os.path.dirname(self.localFile)
                     self.remoteFile = os.path.dirname(os.path.dirname(self.remoteFile))
@@ -152,76 +158,82 @@ class ScpCopier(threading.Thread, syncCommand):
                     ScpCopier(self.host, self.username, self.password, self.localFile, self.remoteFile, self.port).start()
 
                 def showMsg(msg):
-                    error_msg = 'no such file or directory'
-                    m = re.search(error_msg, msg)
-                    if m is not None: # do something
-                        if sublime.ok_cancel_dialog(error_msg + '\r\n' + self.relPath + '\r\n' +'* Are you want to sync parent folder?'):
+                    if msg.find('no such file or directory') != -1:
+                        if sublime.ok_cancel_dialog('No such file or directory\n' + self.relPath + '\n' + '* Do you want to sync the parent folder?'):
                             syncFolder()
-                    else:
-                        # sublime.status_message(msg)
+                    elif msg.find('Host key verification failed') != -1:
+                    # else:
+                        msg = 'Please generate SSH public-key and run: \n'
+                        msg += 'ssh -p ' + self.port + ' ' + self.username + '@' + self.host + " 'mkdir -p ~/.ssh && cat >> ~/.ssh/authorized_keys' < ~/.ssh/id_rsa.pub \n"
                         sublime.message_dialog(msg)
+                    else:
+                        if msg:
+                            print('SimpleSync: ', msg)
+                            sublime.message_dialog(msg)
+                        else:
+                            sublime.status_message('SimpleSync: Completed!')
 
-                result = p.stdout.read().decode('utf-8');
-                #     if IS_GTE_ST3:
-                #         buff = buff.decode('utf-8')
-                # print(result)
+                result = p.stdout.read().decode('utf-8')
                 showMsg(result)
             else:
                 retcode = subprocess.call(args)
-                print(retcode)
-                if retcode != 0: # error
+                if retcode != 0:
+                    # error
+                    print('SimpleSync: ', retcode)
                     sublime.message_dialog('sync failed')
+                else:
+                    sublime.status_message('SimpleSync: Completed!')
 
         except Exception as exception:
             # Alert "SimpleSync: No file_name", if the file size is zero.
             # print(exception);
             sublime.error_message(PACKAGE_NAME + ': ' + exception)
 
+
 # LocalCopier does local copying using threading to avoid UI blocking
 class LocalCopier(threading.Thread, syncCommand):
-  def __init__(self, localFile, remoteFile):
-    self.localFile  = localFile
-    self.remoteFile = remoteFile
+    def __init__(self, localFile, remoteFile):
+        self.localFile = localFile
+        self.remoteFile = remoteFile
 
-    # settings = self.getSetting()
-    # config = settings.get("config")
-    # self.debug = config['debug'] if "debug" in config else False
+        # settings = self.getSetting()
+        # config = settings.get("config")
+        # self.debug = config['debug'] if "debug" in config else False
+        threading.Thread.__init__(self)
 
-    threading.Thread.__init__(self)
+    def run(self):
+        # print('SimpleSync: ', self.localFile, ' -> ', self.remoteFile)
 
-  def run(self):
-    # print('SimpleSync: ', self.localFile, ' -> ', self.remoteFile)
+        if OS == 'Windows':
+            # subprocess.call(args)
+            # cmd = os.environ['SYSTEMROOT'] + '\\System32\\cmd.exe'
+            # args = [cmd, '/c', 'copy', '/y']
 
-    if OS == 'Windows':
-        # subprocess.call(args)
-        # cmd = os.environ['SYSTEMROOT'] + '\\System32\\cmd.exe'
-        # args = [cmd, '/c', 'copy', '/y']
+            # subprocess.call(args, shell=True)
+            # args = ['copy', '/y']
+            args = ['xcopy', '/y', '/e', '/h']
 
-        # subprocess.call(args, shell=True)
-        # args = ['copy', '/y']
-        args = ['xcopy', '/y', '/e', '/h']
+            # folder path
+            # print(os.path.split(self.remoteFile)[0])
+            # print(os.path.dirname(self.remoteFile))
+            # print(re.sub(r'\\[^\\]*$', '', self.remoteFile))
 
-        # folder path
-        # print(os.path.split(self.remoteFile)[0])
-        # print(os.path.dirname(self.remoteFile))
-        # print(re.sub(r'\\[^\\]*$', '', self.remoteFile))
+            # print('*********', self.remoteFile)
+            # replace C:\test/\test\ -> C:\test\test\
+            self.remoteFile = self.remoteFile.replace('/\\', '\\')
+            # replace /path/file.ext -> /path
+            self.remoteFile = os.path.dirname(self.remoteFile) + '\\'
+            # print('*********', self.remoteFile)
+        else:
+            args = ['cp']
+        args.extend([self.localFile, self.remoteFile])
 
-        # print('*********', self.remoteFile)
-        # replace C:\test/\test\ -> C:\test\test\
-        self.remoteFile = self.remoteFile.replace('/\\', '\\')
-        # replace /path/file.ext -> /path
-        self.remoteFile = os.path.dirname(self.remoteFile) + '\\'
-        # print('*********', self.remoteFile)
-    else:
-        args = ['cp']
-    args.extend([self.localFile, self.remoteFile])
+        print('SimpleSync: ', ' '.join(args))
+        # return
+        try:
+            retcode = subprocess.call(args, shell=True)
+            print(retcode)
 
-    print('SimpleSync: ', ' '.join(args))
-    # return
-    try:
-        retcode = subprocess.call(args, shell=True) 
-            # print(retcode) 
-
-    except Exception as exception:
-        # print(exception);
-        sublime.error_message(PACKAGE_NAME + ': ' + str(exception))
+        except Exception as exception:
+            # print(exception);
+            sublime.error_message(PACKAGE_NAME + ': ' + str(exception))
