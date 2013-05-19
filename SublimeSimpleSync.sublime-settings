@@ -1,3 +1,4 @@
+// Please add key map: { "keys": ["alt+s"], "command": "sublime_simple_sync"}
 {
   "config": {
     "autoSync": false,
@@ -9,7 +10,7 @@
     "host"     : "localhost",
     "port"     : "22",
     "username" : "userName",
-    "password" : "passWord",
+    "password" : "passWord", // for windows
     "local"    : "E:\\projectFolder\\projectA",
     "remote"   : "/home/projectA/"
   },
