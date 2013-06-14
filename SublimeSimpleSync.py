@@ -144,6 +144,23 @@ class ScpCopier(threading.Thread, syncCommand):
         args.extend(ext)
         print('SimpleSync: ', ' '.join(args))
 
+        self.i = 1
+        self.done = False
+
+        def showLoading():
+            # print(self.i)
+            if self.i % 2 == 0:
+                s = 0
+                e = 3
+            else:
+                s = 3
+                e = 0
+            if not self.done:
+                sublime.status_message('SimpleSync [%s=%s]' % (' ' * s, ' ' * e))
+                sublime.set_timeout(showLoading, 500)
+                self.i += 1
+        showLoading()
+
         # return
         try:
             if self.debug:
@@ -188,6 +205,7 @@ class ScpCopier(threading.Thread, syncCommand):
             # Alert "SimpleSync: No file_name", if the file size is zero.
             # print(exception);
             sublime.error_message(PACKAGE_NAME + ': ' + exception)
+        self.done = True
 
 
 # LocalCopier does local copying using threading to avoid UI blocking
