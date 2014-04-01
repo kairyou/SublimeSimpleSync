@@ -12,10 +12,12 @@ import threading
 # import re
 import sublime
 import sublime_plugin
-print(os.path.join(sublime.packages_path(), 'Default'))
+import zipfile
+# print(os.path.join(sublime.packages_path(), 'Default'))
 
 # Caches
 #__name__ # ST3 bug with __name__
+BASE_PATH = os.path.abspath(os.path.dirname(__file__))
 PACKAGE_NAME = 'SublimeSimpleSync'
 PACKAGE_SETTINGS = PACKAGE_NAME + '.sublime-settings'
 OS = platform.system()
@@ -255,3 +257,40 @@ class LocalCopier(threading.Thread, syncCommand):
         except Exception as exception:
             # print(exception);
             sublime.error_message(PACKAGE_NAME + ': ' + str(exception))
+
+
+def plugin_loaded():  # for ST3 >= 3016
+    PACKAGES_PATH = sublime.packages_path()
+    TARGET_PATH = os.path.join(PACKAGES_PATH, PACKAGE_NAME)
+    # print(TARGET_PATH);
+    # first run
+    if not os.path.isdir(TARGET_PATH):
+        os.makedirs(TARGET_PATH)
+        # copy files
+        file_list = [
+            'Main.sublime-menu', 'pscp.exe',
+            'SublimeSimpleSync.py',
+            'README.md',
+            'SublimeSimpleSync.sublime-settings',
+            'sync.bat'
+        ]
+        try:
+            extract_zip_resource(BASE_PATH, file_list, TARGET_PATH)
+        except Exception as e:
+            print(e)
+
+if not IS_GTE_ST3:
+    sublime.set_timeout(plugin_loaded, 0)
+
+def extract_zip_resource(path_to_zip, file_list, extract_dir=None):
+    if extract_dir is None:
+        return
+    # print(extract_dir)
+    if os.path.exists(path_to_zip):
+        z = zipfile.ZipFile(path_to_zip, 'r')
+        for f in z.namelist():
+            # if f.endswith('.tmpl'):
+            if f in file_list:
+                # print(f)
+                z.extract(f, extract_dir)
+        z.close()
