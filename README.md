@@ -17,9 +17,9 @@ cd [...]/Sublime Text 2/Packages
 git clone https://github.com/kairyou/SublimeSimpleSync.git SimpleSync
 ```
 
-### Using ST2 Package Control
+### Using Package Control
 
-Search for SimpleSync in ST2 Package Control and install it.
+Search for SimpleSync in Package Control and install it.
 
 ## Settings
 
