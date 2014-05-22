@@ -49,6 +49,13 @@ Sample settings:
 }
 ```
 
+## Add key bindings
+
+Preferences > Key Bindings - User
+
+    { "keys": ["alt+s"], "command": "sublime_simple_sync"},
+    { "keys": ["alt+shift+s"], "command": "sublime_simple_sync_path"},
+
 Files are saved to remote server automatically when you save them locally. In case of "local" syncing, they are copied to "remote" folder which is on the same machine.
 
 ## Contributors

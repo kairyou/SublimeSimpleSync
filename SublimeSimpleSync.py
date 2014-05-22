@@ -36,22 +36,23 @@ class syncCommand():
         if self.window.active_view():
             return self.window.active_view().file_name()
         else:
-            sublime.error_message(PACKAGE_NAME + ': No file_name')
+            # sublime.error_message(PACKAGE_NAME + ': No file_name')
+            self.syncPastePath()
             return False
 
     # Get sync item(s) for a file
-    def getSyncItem(self, localFile, rules):
+    def getSyncItem(self, localFile):
         ret = []
-        # print(localFile, rules)
-        for item in rules:
+        # print(localFile, self.rules)
+        for item in self.rules:
             # print(localFile.startswith(item['local']), localFile, item['local'])
             if localFile.startswith(item['local']):
                 ret += [item]
         return ret
 
     # support multiple rules
-    def syncFile(self, localFile, rules):
-        syncItems = self.getSyncItem(localFile, rules)
+    def syncFile(self, localFile):
+        syncItems = self.getSyncItem(localFile)
         # print('+++ syncCommand: ', syncItems)
         if (len(syncItems) > 0):
             for item in syncItems:
@@ -65,17 +66,35 @@ class syncCommand():
                 elif (item['type'] == 'local'):
                     LocalCopier(localFile, remoteFile).start()
 
+    def syncPastePath(self):
+        file_path = ''
+        def on_done(file_path):
+            # print(file_path)
+            if not file_path: return
+            self.syncFile(file_path)
+        self.window.show_input_panel('[%s] Copy and paste local file path :' % (PACKAGE_NAME), file_path, on_done, None, None)
 
-class SublimeSimpleSyncCommand(sublime_plugin.WindowCommand, syncCommand):
+# show_input_panel and paste local file path
+# { "keys": ["alt+shift+s"], "command": "sublime_simple_sync_path"},
+class SublimeSimpleSyncPathCommand(sublime_plugin.WindowCommand, syncCommand):
     def run(self):
         settings = self.getSetting()
-        rules = settings.get('rules')
+        self.rules = settings.get('rules')
+        self.syncPastePath()
+
+# { "keys": ["alt+s"], "command": "sublime_simple_sync"},
+class SublimeSimpleSyncCommand(sublime_plugin.WindowCommand, syncCommand):
+    def run(self):
+        # for x in self.window.views(): print(x.file_name())
+        settings = self.getSetting()
+        self.rules = settings.get('rules')
         # auto save
         self.window.run_command('save')
 
         localFile = self.getPath()
         # print('********', localFile)
-        self.syncFile(localFile, rules)
+        if localFile is not False:
+            self.syncFile(localFile)
 
 
 # auto run, sublime_plugin.EventListener
@@ -91,8 +110,8 @@ class SimpleSync(sublime_plugin.EventListener, syncCommand):
         # print('********', localFile)
 
         if autoSycn:
-            rules = settings.get('rules')
-            self.syncFile(localFile, rules)
+            self.rules = settings.get('rules')
+            self.syncFile(localFile)
 
 
 # ScpCopier does actual copying using threading to avoid UI blocking
