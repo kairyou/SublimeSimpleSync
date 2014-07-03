@@ -31,7 +31,8 @@ Sample settings:
 {
   "config": {
     "autoSync": false,
-    "debug": false
+    "debug": false,
+    "timeout": 10
   },
   "rules": [{
     "type"     : "ssh",
