@@ -121,10 +121,10 @@ class Command(object):
         self.process = None
         self.msg = None
 
-    def run(self, timeout=10):
+    def run(self, timeout=10, shell=True):
         def target():
             # print ('Thread started')
-            self.process = subprocess.Popen(self.cmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, shell=True)
+            self.process = subprocess.Popen(self.cmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, shell=shell)
             (stdout, stderr) = self.process.communicate()
             # print ('Thread finished')
             # print(stdout, stderr)
@@ -170,6 +170,7 @@ class ScpCopier(threading.Thread, syncCommand):
 
         pw = []
         ext = ['-r', '-C', '-P', str(self.port), self.localFile, remote]
+        shell = True
 
         if OS == 'Windows':
             # cmd = os.environ['SYSTEMROOT'] + '\\System32\\cmd.exe'
@@ -187,6 +188,7 @@ class ScpCopier(threading.Thread, syncCommand):
             if self.password:
                 pw = ['-pw', self.password]
             args.extend(pw)
+            shell = False
         else:
             args = ['scp']
 
@@ -221,12 +223,14 @@ class ScpCopier(threading.Thread, syncCommand):
                 sublime.status_message('%s [%s=%s]' % (PACKAGE_NAME, ' ' * s, ' ' * e))
                 sublime.set_timeout(show_loading, 500)
                 self.i += 1
+            else:
+                sublime.status_message('')
         show_loading()
 
         # return
         try:
             command = Command(cmd)
-            command.run(timeout=self.timeout)
+            command.run(timeout=self.timeout, shell=shell)
 
             def status_message(msg):
                 sublime.status_message('%s: %s' % (PACKAGE_NAME, msg))
@@ -241,8 +245,14 @@ class ScpCopier(threading.Thread, syncCommand):
                 if msg.find('no such file or directory') != -1:
                     if sublime.ok_cancel_dialog('No such file or directory\n' + self.relPath + '\n' + '* Do you want to sync the parent folder?'):
                         sync_folder()
+                elif msg.find('Store key in cache') != -1:
+                    msg = 'Please run this command once: \n'
+                    msg += cmd + '\n'
+                    msg += '*** you can copy this command via "Console"(ctrl+` shortcut).'
+                    status_message('Sync failed')
+                    sublime.message_dialog(msg)
+                    print(cmd)
                 elif msg.find('Host key verification failed') != -1:
-                # else:
                     msg = 'Please generate SSH public-key and run: \n'
                     msg += 'ssh -p ' + self.port + ' ' + self.username + '@' + self.host + " 'mkdir -p ~/.ssh && cat >> ~/.ssh/authorized_keys' < ~/.ssh/id_rsa.pub \n"
                     status_message('Sync failed')
@@ -251,17 +261,16 @@ class ScpCopier(threading.Thread, syncCommand):
                     msg = 'Scp auth faild. Please check your sshd_config, and enable AuthorizedKeysFile!'
                     status_message('Sync failed')
                     sublime.message_dialog(msg)
+                elif msg.find('100%') != -1:
+                    status_message('Completed!')
+                elif msg.find('s password:') != -1:
+                    msg = 'Please enlarge the ["config"]["timeout"] in %s settings (Default: 10)' % (PACKAGE_NAME)
+                    status_message('Sync failed')
+                    sublime.message_dialog(msg)
                 else:
                     if msg:
-                        if msg.find('100%') != -1:
-                            status_message('Completed!')
-                        elif msg.find('s password:') != -1:
-                            msg = 'Please enlarge the ["config"]["timeout"] in %s settings (Default: 10)' % (PACKAGE_NAME)
-                            status_message('Sync failed')
-                            sublime.message_dialog(msg)
-                        else:
-                            sublime.status_message('Sync failed')
-                            sublime.message_dialog(msg)
+                        sublime.status_message('Sync failed')
+                        sublime.message_dialog(msg)
                     else:
                         status_message('Completed!')
             if self.debug:
@@ -271,7 +280,7 @@ class ScpCopier(threading.Thread, syncCommand):
         except Exception as exception:
             # Alert "SimpleSync: No file_name", if the file size is zero.
             # print(exception);
-            sublime.error_message(PACKAGE_NAME + ': ' + exception)
+            sublime.error_message(PACKAGE_NAME + ': ' + str(exception))
         self.done = True
 
 
@@ -294,7 +303,6 @@ class LocalCopier(threading.Thread, syncCommand):
             # cmd = os.environ['SYSTEMROOT'] + '\\System32\\cmd.exe'
             # args = [cmd, '/c', 'copy', '/y']
 
-            # subprocess.call(args, shell=True)
             # args = ['copy', '/y']
             args = ['xcopy', '/y', '/e', '/h']
 

@@ -1,29 +1,29 @@
 # SublimeSimpleSync
 
-Simple Sublime Text 2/3 plugin for SSH and local syncing.
+Simple Sublime Text 2/3 plugin for SSH and local syncing, support Windows/Mac/Linux.
 
 ## Before you start
 
-- SSH synchronization is done via scp, your system must have SSH public-key authentication enabled.
+- SSH synchronization is done via scp, support SSH key authentication(Mac/Linux) and password authentication(Windows/Mac/Linux).
 
 ## Installation
 
 ### Manually
 
-Clone this project into your ST2 Packages folder, for example:
+Clone this project into your ST Packages folder, for example:
 
 ``` bash
 cd [...]/Sublime Text 2/Packages
-git clone https://github.com/kairyou/SublimeSimpleSync.git SimpleSync
+git clone https://github.com/kairyou/SublimeSimpleSync.git SublimeSimpleSync
 ```
 
 ### Using Package Control
 
-Search for SimpleSync in Package Control and install it.
+Search for SublimeSimpleSync in Package Control and install it.
 
 ## Settings
 
-When you finish installing SimpleSync, its settings can be found in Preferences > Package Settings > SimpleSync Settings
+When you finish installing SimpleSync, its settings can be found in Preferences > Package Settings > SublimeSimpleSync Settings
 
 Sample settings:
 
@@ -34,19 +34,19 @@ Sample settings:
     "debug": false,
     "timeout": 10
   },
-  "rules": [{
-    "type"     : "ssh",
-    "host"     : "tnhu-ld",
-    "port"     : "22",
-    "username" : "tnhu",
-    "password" : "password",
-    "local"    : "/Users/tnhu/workspace/trunk",
-    "remote"   : "/home/tnhu/workspace/trunk"
-  }, {
-    "type"     : "local",
-    "local"    : "/Users/tnhu/Library/Application Support/Sublime Text 2/Packages/SimpleSync",
-    "remote"   : "/Users/tnhu/Dropbox/projects/SimpleSync"
-  }]
+  "rules": [
+  {
+    "type": "ssh", "host": "domain or ip", "port": "22",
+    "username": "userName", "password": "passWord", // support windows/Mac/linux
+    "local" : "/Users/projects/projectA",
+    "remote" : "/home/projectA/"
+  },
+  {
+    "type" : "local",
+    "local" : "E:\\projectFolder\\projectA",
+    "remote" : "D:\\bakup\\projectA"
+  }
+  ]
 }
 ```
 

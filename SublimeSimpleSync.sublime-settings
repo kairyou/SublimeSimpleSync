@@ -1,23 +1,23 @@
-// Please add key map: { "keys": ["alt+s"], "command": "sublime_simple_sync"}
+// Please add key map: 
+// { "keys": ["alt+s"], "command": "sublime_simple_sync"}
+// { "keys": ["alt+shift+s"], "command": "sublime_simple_sync_path"}
 {
   "config": {
     "autoSync": false,
-    "debug": true
+    "debug": false,
+    "timeout": 10
   },
   "rules": [
   {
-    "type"     : "ssh",
-    "host"     : "localhost",
-    "port"     : "22",
-    "username" : "userName",
-    "password" : "passWord", // for windows
-    "local"    : "E:\\projectFolder\\projectA",
-    "remote"   : "/home/projectA/"
+    "type": "ssh", "host": "domain or ip", "port": "22",
+    "username": "userName", "password": "passWord", // support windows/Mac/linux
+    "local" : "/Users/projects/projectA",
+    "remote" : "/home/projectA/"
   },
   {
-    "type"     : "local",
-    "local"    : "E:\\projectFolder\\projectA",
-    "remote"   : "D:\\bakup\\projectA"
+    "type" : "local",
+    "local" : "E:\\projectFolder\\projectA",
+    "remote" : "D:\\bakup\\projectA"
   }
   ]
 }
