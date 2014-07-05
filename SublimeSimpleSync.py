@@ -116,17 +116,23 @@ class SimpleSync(sublime_plugin.EventListener, syncCommand):
 # command = Command("echo 'Process started'; sleep 2; echo 'Process finished'")
 # command.run(timeout=3)
 class Command(object):
-    def __init__(self, cmd):
+    def __init__(self, cmd, debug=False, expect_cmd=None):
         self.cmd = cmd
+        self.expect_cmd = expect_cmd
         self.process = None
         self.msg = None
+        self.debug = debug
 
     def run(self, timeout=10, shell=True):
         def target():
-            # print ('Thread started')
-            self.process = subprocess.Popen(self.cmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, shell=shell)
+            if self.debug: print('Thread started')
+            cmd = self.expect_cmd if self.expect_cmd else self.cmd
+            self.process = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, shell=shell)
+            # retcode = subprocess.call(args)
+            # if retcode != 0:#sync failed
+            # else: #sync failed
             (stdout, stderr) = self.process.communicate()
-            # print ('Thread finished')
+            if self.debug: print('Thread finished')
             # print(stdout, stderr)
             #self.process.stdout.read().decode('utf-8')
             self.msg = stdout.decode('utf-8')
@@ -136,10 +142,27 @@ class Command(object):
 
         thread.join(timeout)
         if thread.is_alive():
-            # print ('Terminating process')
+            if self.debug: print ('Terminating process')
             self.process.terminate() # kill proc
             thread.join()
         # print (self.process.returncode)
+    def store_key(self, shell=True):
+        if OS != 'Windows':
+            self.cmd = self.cmd.replace('"','\\"')
+        if OS == 'Windows':
+            args = [self.cmd]
+        elif OS == 'Darwin':
+            args = [
+                'osascript -e \'tell app "Terminal" to do script "%s"\'' % (self.cmd),
+                'open -W -a Terminal'
+            ]
+        else:
+            args = [
+                # 'gnome-terminal -x "%s"' % (self.cmd)
+                'gnome-terminal --tab -e "%s"' % (self.cmd)
+            ]
+        # print('OS:', OS, 'cmd:', ';'.join(args))
+        subprocess.call(';'.join(args), shell=shell)
 
 # ScpCopier does actual copying using threading to avoid UI blocking
 class ScpCopier(threading.Thread, syncCommand):
@@ -169,13 +192,13 @@ class ScpCopier(threading.Thread, syncCommand):
         # print(PACKAGE_NAME , self.localFile, ' -> ', self.remoteFile)
 
         pw = []
-        ext = ['-r', '-C', '-P', str(self.port), self.localFile, remote]
+        ext = ['-r', '-C', '-P', str(self.port), '\"%s\"' % (self.localFile), '\"%s\"' % (remote)]
         shell = True
 
         if OS == 'Windows':
             # cmd = os.environ['SYSTEMROOT'] + '\\System32\\cmd.exe'
 
-            scp = os.path.join(packageDir, 'pscp.exe')
+            scp = '\"%s\"' % (os.path.join(packageDir, 'pscp.exe'))
             args = [scp]
                 # args = [scp, "-v"] # show message
 
@@ -193,23 +216,25 @@ class ScpCopier(threading.Thread, syncCommand):
             args = ['scp']
 
         args.extend(ext)
-        cmd = ' '.join(args)
-        print(PACKAGE_NAME + ': ' + cmd)
+        run_cmd = ' '.join(args)
+        print(PACKAGE_NAME + ': ' + run_cmd)
 
+        expect_cmd = None
         if OS != 'Windows' and self.password: # use password, ignore authorized_keys
-            cmd = r"""
+            # ~/.ssh/known_hosts
+            expect_cmd = r'''
             expect -c "
             set timeout {timeout};
             spawn {cmd};
             expect *password* {{ send \"{password}\r\" }};
-            expect *\r
             expect "100%"
             expect eof"
-            """.format(cmd=cmd, password=self.password, timeout=self.timeout)
-            # print(args)
+            '''.format(cmd=run_cmd, password=self.password, timeout=self.timeout)
+            # print(expect)
 
         self.i = 1
         self.done = False
+        self.success = False
 
         def show_loading():
             # print(self.i)
@@ -224,65 +249,56 @@ class ScpCopier(threading.Thread, syncCommand):
                 sublime.set_timeout(show_loading, 500)
                 self.i += 1
             else:
-                sublime.status_message('')
-        show_loading()
-
-        # return
-        try:
-            command = Command(cmd)
-            command.run(timeout=self.timeout, shell=shell)
-
-            def status_message(msg):
+                msg = 'Completed!' if self.success else 'Sync failed!'
                 sublime.status_message('%s: %s' % (PACKAGE_NAME, msg))
+        show_loading()
+        # return
+        def sync_folder():
+            self.localFile = os.path.dirname(self.localFile)
+            self.remoteFile = os.path.dirname(os.path.dirname(self.remoteFile))
+            # print(self.localFile, ',', self.remoteFile)
+            ScpCopier(self.host, self.username, self.password, self.localFile, self.remoteFile, self.port).start()
 
-            def sync_folder():
-                self.localFile = os.path.dirname(self.localFile)
-                self.remoteFile = os.path.dirname(os.path.dirname(self.remoteFile))
-                # print(self.localFile, ',', self.remoteFile)
-                ScpCopier(self.host, self.username, self.password, self.localFile, self.remoteFile, self.port).start()
-
-            def show_msg(msg):
-                if msg.find('no such file or directory') != -1:
-                    if sublime.ok_cancel_dialog('No such file or directory\n' + self.relPath + '\n' + '* Do you want to sync the parent folder?'):
-                        sync_folder()
-                elif msg.find('Store key in cache') != -1:
-                    msg = 'Please run this command once: \n'
-                    msg += cmd + '\n'
-                    msg += '*** you can copy this command via "Console"(ctrl+` shortcut).'
-                    status_message('Sync failed')
-                    sublime.message_dialog(msg)
-                    print(cmd)
-                elif msg.find('Host key verification failed') != -1:
-                    msg = 'Please generate SSH public-key and run: \n'
-                    msg += 'ssh -p ' + self.port + ' ' + self.username + '@' + self.host + " 'mkdir -p ~/.ssh && cat >> ~/.ssh/authorized_keys' < ~/.ssh/id_rsa.pub \n"
-                    status_message('Sync failed')
-                    sublime.message_dialog(msg)
-                elif msg.find('Permission denied (publickey,password)') != -1: # authorized faild
-                    msg = 'Scp auth faild. Please check your sshd_config, and enable AuthorizedKeysFile!'
-                    status_message('Sync failed')
-                    sublime.message_dialog(msg)
-                elif msg.find('100%') != -1:
-                    status_message('Completed!')
-                elif msg.find('s password:') != -1:
-                    msg = 'Please enlarge the ["config"]["timeout"] in %s settings (Default: 10)' % (PACKAGE_NAME)
-                    status_message('Sync failed')
+        def show_msg(msg):
+            if msg.find('no such file or directory') != -1:
+                if sublime.ok_cancel_dialog('No such file or directory\n' + self.relPath + '\n' + '* Do you want to sync the parent folder?'):
+                    sync_folder()
+            elif msg.find('continue connecting') != -1 or msg.find('Store key in cache') != -1:
+                # msg = 'Please run this command once: \n'
+                # msg += run_cmd + '\n'
+                # msg += '*** Also, you can copy this command via "Console"(ctrl+` shortcut).'
+                # self.success = False
+                # sublime.message_dialog(msg)
+                # print(run_cmd)
+                command.store_key(shell=shell)
+            elif msg.find('Host key verification failed') != -1:
+                msg = 'Please generate SSH public-key and run: \n'
+                msg += 'ssh -p ' + self.port + ' ' + self.username + '@' + self.host + " 'mkdir -p ~/.ssh && cat >> ~/.ssh/authorized_keys' < ~/.ssh/id_rsa.pub \n"
+                sublime.message_dialog(msg)
+            elif msg.find('Permission denied (publickey,password)') != -1: # authorized faild
+                msg = 'Scp auth faild. Please check your sshd_config, and enable AuthorizedKeysFile!'
+                sublime.message_dialog(msg)
+            elif msg.find('100%') != -1:
+                self.success = True
+            elif msg.find('s password:') != -1:
+                msg = 'Please enlarge the ["config"]["timeout"] in %s settings (Default: 10)' % (PACKAGE_NAME)
+                sublime.message_dialog(msg)
+            else:
+                if msg:
                     sublime.message_dialog(msg)
                 else:
-                    if msg:
-                        sublime.status_message('Sync failed')
-                        sublime.message_dialog(msg)
-                    else:
-                        status_message('Completed!')
+                    self.success = True
+        try:
+            command = Command(run_cmd, debug=self.debug, expect_cmd=expect_cmd)
+            command.run(timeout=self.timeout, shell=shell)
+            self.done = True
             if self.debug:
                 print(command.msg, command.process.returncode)
             show_msg(command.msg)
-
         except Exception as exception:
             # Alert "SimpleSync: No file_name", if the file size is zero.
             # print(exception);
             sublime.error_message(PACKAGE_NAME + ': ' + str(exception))
-        self.done = True
-
 
 # LocalCopier does local copying using threading to avoid UI blocking
 class LocalCopier(threading.Thread, syncCommand):
