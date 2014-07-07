@@ -260,7 +260,7 @@ class ScpCopier(threading.Thread, syncCommand):
             ScpCopier(self.host, self.username, self.password, self.localFile, self.remoteFile, self.port).start()
 
         def show_msg(msg):
-            if msg.find('no such file or directory') != -1:
+            if msg.find('No such file or directory') != -1:
                 if sublime.ok_cancel_dialog('No such file or directory\n' + self.relPath + '\n' + '* Do you want to sync the parent folder?'):
                     sync_folder()
             elif msg.find('continue connecting') != -1 or msg.find('Store key in cache') != -1:
@@ -293,7 +293,7 @@ class ScpCopier(threading.Thread, syncCommand):
             command.run(timeout=self.timeout, shell=shell)
             self.done = True
             if self.debug:
-                print(command.msg, command.process.returncode)
+                print('msg:', command.msg, 'returncode:', command.process.returncode)
             show_msg(command.msg)
         except Exception as exception:
             # Alert "SimpleSync: No file_name", if the file size is zero.
