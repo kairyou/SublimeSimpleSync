@@ -147,6 +147,7 @@ class Command(object):
             thread.join()
         # print (self.process.returncode)
     def store_key(self, shell=True):
+        ret = True;
         if OS != 'Windows':
             self.cmd = self.cmd.replace('"','\\"')
         if OS == 'Windows':
@@ -162,7 +163,10 @@ class Command(object):
                 'gnome-terminal --tab -e "%s"' % (self.cmd)
             ]
         # print('OS:', OS, 'cmd:', ';'.join(args))
-        subprocess.call(';'.join(args), shell=shell)
+        r = subprocess.call(';'.join(args), shell=shell)
+        if r != 0:
+            ret = False
+        return ret
 
 # ScpCopier does actual copying using threading to avoid UI blocking
 class ScpCopier(threading.Thread, syncCommand):
@@ -260,27 +264,27 @@ class ScpCopier(threading.Thread, syncCommand):
             ScpCopier(self.host, self.username, self.password, self.localFile, self.remoteFile, self.port).start()
 
         def show_msg(msg):
-            if msg.find('No such file or directory') != -1:
+            find_msg = msg.lower()
+            if find_msg.find('No such file or directory'.lower()) != -1:
                 if sublime.ok_cancel_dialog('No such file or directory\n' + self.relPath + '\n' + '* Do you want to sync the parent folder?'):
                     sync_folder()
-            elif msg.find('continue connecting') != -1 or msg.find('Store key in cache') != -1:
-                # msg = 'Please run this command once: \n'
-                # msg += run_cmd + '\n'
-                # msg += '*** Also, you can copy this command via "Console"(ctrl+` shortcut).'
-                # self.success = False
-                # sublime.message_dialog(msg)
-                # print(run_cmd)
-                command.store_key(shell=shell)
-            elif msg.find('Host key verification failed') != -1:
+            elif find_msg.find('continue connecting'.lower()) != -1 or find_msg.find('Store key in cache'.lower()) != -1:
+                msg = 'Please run this command once: \n'
+                msg += run_cmd + '\n'
+                msg += '*** Also, you can copy this command via "Console"(ctrl+` shortcut).'
+                if not command.store_key(shell=shell):
+                    self.success = False
+                    sublime.message_dialog(msg)
+            elif find_msg.find('Host key verification failed'.lower()) != -1:
                 msg = 'Please generate SSH public-key and run: \n'
                 msg += 'ssh -p ' + self.port + ' ' + self.username + '@' + self.host + " 'mkdir -p ~/.ssh && cat >> ~/.ssh/authorized_keys' < ~/.ssh/id_rsa.pub \n"
                 sublime.message_dialog(msg)
-            elif msg.find('Permission denied (publickey,password)') != -1: # authorized faild
+            elif find_msg.find('Permission denied (publickey,password)'.lower()) != -1: # authorized faild
                 msg = 'Scp auth faild. Please check your sshd_config, and enable AuthorizedKeysFile!'
                 sublime.message_dialog(msg)
-            elif msg.find('100%') != -1:
+            elif find_msg.find('100%') != -1:
                 self.success = True
-            elif msg.find('s password:') != -1:
+            elif find_msg.find('s password:') != -1:
                 msg = 'Please enlarge the ["config"]["timeout"] in %s settings (Default: 10)' % (PACKAGE_NAME)
                 sublime.message_dialog(msg)
             else:
