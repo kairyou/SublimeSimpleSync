@@ -333,7 +333,7 @@ class LocalCopier(threading.Thread, syncCommand):
 
             # print('*********', self.remoteFile)
             # replace C:\test/\test\ -> C:\test\test\
-            self.remoteFile = self.remoteFile.replace('/\\', '\\')
+            self.remoteFile = self.remoteFile.replace('/\\', '\\').rstrip('/')
             # replace /path/file.ext -> /path
             self.remoteFile = os.path.dirname(self.remoteFile) + '\\'
             # print('*********', self.remoteFile)
