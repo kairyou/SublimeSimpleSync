@@ -324,7 +324,7 @@ class LocalCopier(threading.Thread, syncCommand):
             # args = [cmd, '/c', 'copy', '/y']
 
             # args = ['copy', '/y']
-            args = ['xcopy', '/y', '/e', '/h']
+            args = ['xcopy', '/y', '/s', '/h']
 
             # folder path
             # print(os.path.split(self.remoteFile)[0])
