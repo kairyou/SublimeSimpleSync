@@ -128,12 +128,9 @@ class Command(object):
             if self.debug: print('Thread started')
             cmd = self.expect_cmd if self.expect_cmd else self.cmd
             self.process = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, shell=shell)
-            # retcode = subprocess.call(args)
-            # if retcode != 0:#sync failed
-            # else: #sync failed
             (stdout, stderr) = self.process.communicate()
-            if self.debug: print('Thread finished')
             # print(stdout, stderr)
+            if self.debug: print('Thread finished')
             #self.process.stdout.read().decode('utf-8')
             self.msg = stdout.decode('utf-8')
 
@@ -150,9 +147,9 @@ class Command(object):
         ret = True;
         if OS != 'Windows':
             self.cmd = self.cmd.replace('"','\\"')
-        if OS == 'Windows':
-            args = [self.cmd]
-        elif OS == 'Darwin':
+        # if OS == 'Windows':
+        #     args = [self.cmd]
+        if OS == 'Darwin':
             args = [
                 'osascript -e \'tell app "Terminal" to do script "%s"\'' % (self.cmd),
                 'open -W -a Terminal'
@@ -268,7 +265,7 @@ class ScpCopier(threading.Thread, syncCommand):
             if find_msg.find('No such file or directory'.lower()) != -1:
                 if sublime.ok_cancel_dialog('No such file or directory\n' + self.relPath + '\n' + '* Do you want to sync the parent folder?'):
                     sync_folder()
-            elif find_msg.find('continue connecting'.lower()) != -1 or find_msg.find('Store key in cache'.lower()) != -1:
+            elif find_msg.find('continue connecting'.lower()) != -1:# or find_msg.find('Store key in cache'.lower()) != -1 #(remove Windows)
                 msg = 'Please run this command once: \n'
                 msg += run_cmd + '\n'
                 msg += '*** Also, you can copy this command via "Console"(ctrl+` shortcut).'
@@ -293,12 +290,26 @@ class ScpCopier(threading.Thread, syncCommand):
                 else:
                     self.success = True
         try:
-            command = Command(run_cmd, debug=self.debug, expect_cmd=expect_cmd)
-            command.run(timeout=self.timeout, shell=shell)
+            if OS == 'Windows':
+                retcode = subprocess.call(run_cmd)
+                if self.debug:
+                    print('returncode:', retcode)
+                if retcode != 0:
+                    #sync failed
+                    self.success = False
+                    msg = 'Please verify that your settings(username, password, host, port) is correct and try again'
+                    sublime.message_dialog(msg)
+                else:
+                    self.success = True
+                    #sync failed
+            else:
+                command = Command(run_cmd, debug=self.debug, expect_cmd=expect_cmd)
+                command.run(timeout=self.timeout, shell=shell)
+                if self.debug:
+                    print('msg:', command.msg, 'returncode:', command.process.returncode)
+                show_msg(command.msg)
             self.done = True
-            if self.debug:
-                print('msg:', command.msg, 'returncode:', command.process.returncode)
-            show_msg(command.msg)
+
         except Exception as exception:
             # Alert "SimpleSync: No file_name", if the file size is zero.
             # print(exception);
@@ -319,10 +330,6 @@ class LocalCopier(threading.Thread, syncCommand):
         # print(PACKAGE_NAME, self.localFile, ' -> ', self.remoteFile)
 
         if OS == 'Windows':
-            # subprocess.call(args)
-            # cmd = os.environ['SYSTEMROOT'] + '\\System32\\cmd.exe'
-            # args = [cmd, '/c', 'copy', '/y']
-
             # args = ['copy', '/y']
             args = ['xcopy', '/y', '/s', '/h']
 
@@ -344,8 +351,10 @@ class LocalCopier(threading.Thread, syncCommand):
         print(PACKAGE_NAME + ': ' + ' '.join(args))
         # return
         try:
-            retcode = subprocess.call(args, shell=True)
+            retcode = subprocess.call(' '.join(args), shell=True)
             print(retcode)
+            msg = 'Completed!' if retcode == 0 else 'Sync failed!'
+            sublime.status_message('%s: %s' % (PACKAGE_NAME, msg))
 
         except Exception as exception:
             # print(exception);

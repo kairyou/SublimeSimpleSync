@@ -32,7 +32,7 @@ Sample settings:
   "config": {
     "autoSync": false,
     "debug": false,
-    "timeout": 10
+    "timeout": 10 //support mac/linux
   },
   "rules": [
   {
