@@ -23,6 +23,7 @@ PACKAGE_SETTINGS = PACKAGE_NAME + '.sublime-settings'
 OS = platform.system()
 # print('*********', os.name, sys.platform, OS)
 IS_GTE_ST3 = int(sublime.version()[0]) >= 3
+VERSION = '1.0.11' #version
 
 
 class syncCommand():
@@ -366,17 +367,26 @@ def plugin_loaded():  # for ST3 >= 3016
     TARGET_PATH = os.path.join(PACKAGES_PATH, PACKAGE_NAME)
     # print(TARGET_PATH);
     # first run
-    if not os.path.isdir(TARGET_PATH):
-        os.makedirs(TARGET_PATH)
+    version_file = os.path.join(TARGET_PATH, 'version')
+    # print(PACKAGE_NAME, VERSION, version_file)
+    version = 0
+    if os.path.isfile(version_file):
+        f = open(version_file, 'r')
+        version = f.read().strip() # lines = f.readlines()
+        f.close()
+    # print(VERSION, version, VERSION == version)
+    if not os.path.isdir(TARGET_PATH) or not VERSION == version:
         # copy files
         file_list = [
             'Main.sublime-menu', 'pscp.exe',
             'SublimeSimpleSync.py',
+            'version',
             'README.md',
             'SublimeSimpleSync.sublime-settings',
             'sync.bat'
         ]
         try:
+            os.makedirs(TARGET_PATH)
             extract_zip_resource(BASE_PATH, file_list, TARGET_PATH)
         except Exception as e:
             print(e)
