@@ -19,7 +19,8 @@ git clone https://github.com/kairyou/SublimeSimpleSync.git SublimeSimpleSync
 
 ### Using Package Control
 
-Search for SublimeSimpleSync in Package Control and install it.
+Search for SublimeSimpleSync in Package Control and install it.  
+Note: Please update to latest version and delete `/Packages/SublimeSimpleSync/SublimeSimpleSync.py` once. (You can't use the latest version until remove this file. The latest version has remove this file).
 
 ## Settings
 

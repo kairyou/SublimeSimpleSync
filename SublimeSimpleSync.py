@@ -23,7 +23,7 @@ PACKAGE_SETTINGS = PACKAGE_NAME + '.sublime-settings'
 OS = platform.system()
 # print('*********', os.name, sys.platform, OS)
 IS_GTE_ST3 = int(sublime.version()[0]) >= 3
-VERSION = '1.0.11' #version
+VERSION = '20140721' #version
 
 
 class syncCommand():
@@ -379,7 +379,7 @@ def plugin_loaded():  # for ST3 >= 3016
         # copy files
         file_list = [
             'Main.sublime-menu', 'pscp.exe',
-            'SublimeSimpleSync.py',
+            # 'SublimeSimpleSync.py',
             'version',
             'README.md',
             'SublimeSimpleSync.sublime-settings',
