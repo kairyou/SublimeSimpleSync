@@ -1,29 +1,19 @@
-# SublimeSimpleSync
+# SimpleSync
 
-Simple Sublime Text 2/3 plugin for SSH and local syncing, support Windows/Mac/Linux.
-
-## Before you start
-
-- SSH synchronization is done via scp, support SSH key authentication(Mac/Linux) and password authentication(Windows/Mac/Linux).
+Simple ST3 plugin that sync files to remotes. Sync gets done by `pscp.exe`, SSH key authentication (Recommended) and password authentication are supported.
 
 ## Installation
 
-### Manually
-
-Clone this project into your ST Packages folder, for example:
+Just clone this project into your ST Packages folder:
 
 ``` bash
-cd [...]/Sublime Text 2/Packages
-git clone https://github.com/kairyou/SublimeSimpleSync.git SublimeSimpleSync
+cd [...]/Sublime Text 3/Data/Packages
+git clone https://github.com/ushuz/SimpleSync.git
 ```
-
-### Using Package Control
-
-Search for SublimeSimpleSync in Package Control and install it.
 
 ## Settings
 
-When you finish installing SimpleSync, its settings can be found in Preferences > Package Settings > SublimeSimpleSync Settings
+Preferences > Package Settings > SimpleSync > Settings - User
 
 Sample settings:
 
@@ -35,17 +25,20 @@ Sample settings:
     "timeout": 10
   },
   "rules": [
-  {
-    "type": "ssh", "host": "domain or ip", "port": "22",
-    "username": "userName", "password": "passWord", // support windows/Mac/linux
-    "local" : "/Users/projects/projectA",
-    "remote" : "/home/projectA/"
-  },
-  {
-    "type" : "local",
-    "local" : "E:\\projectFolder\\projectA",
-    "remote" : "D:\\bakup\\projectA"
-  }
+    {
+      "type": "ssh",
+      "host": "domain or ip",
+      "port": "22",
+      "username": "userName",
+      "password": "passWord",
+      "local" : "/Users/user/projects",
+      "remote" : "/home/user/projects"
+    },
+    {
+      "type" : "local",
+      "local" : "C:\\Users\\user\\projects",
+      "remote" : "D:\\Dropbox\\projects"
+    }
   ]
 }
 ```
@@ -65,8 +58,7 @@ Files are saved to remote server automatically when you save them locally. In ca
 * [gfreezy](https://github.com/gfreezy)
 * [kairyou](https://github.com/kairyou)
 * [Jan van Valburg](https://github.com/jan11011977)
-
-* [中文文档](http://www.fantxi.com/blog/archives/sublime-simple-sync/)
+* [ushuz](https://github.com/ushuz)
 
 ## License
 

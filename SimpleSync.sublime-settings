@@ -1,0 +1,19 @@
+// Please add to Key Binding:
+// { "keys": ["alt+s"], "command": "simple_sync"}
+{
+  "config": {
+    "auto": false,
+    "debug": false,
+    "timeout": 10
+  },
+  "rules": [
+    {
+      "host": "Domain OR IP",
+      "port": "22",
+      "username": "USERNAME",
+      "private_key": "/Users/user/.ssh/id_rsa",
+      "local" : "/Users/user/projects",
+      "remote" : "/home/user/projects"
+    },
+  ]
+}
