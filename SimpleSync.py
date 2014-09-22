@@ -27,7 +27,7 @@ class SyncCommand(object):
             return self.window.active_view().file_name()
         else:
             # sublime.error_message(PACKAGE_NAME + ': No file_name')
-            self.syncPastePath()
+            self.sync_paste_path()
             return False
 
     # Get sync item(s) for a file
@@ -50,6 +50,15 @@ class SyncCommand(object):
             ppk = item.get("private_key", "")
             SCPCopy(item['host'], item['username'], password, local_file,
                     remote_file, port=item['port'], relPath=relPath, private_key=ppk).start()
+
+    # Sync pasted path
+    def sync_paste_path(self):
+        file_path = ''
+        def on_done(file_path):
+            # print(file_path)
+            if not file_path: return
+            self.sync_file(file_path)
+        self.window.show_input_panel('[%s] Copy and paste local file path :' % (PACKAGE_NAME), file_path, on_done, None, None)
 
 
 # { "keys": ["alt+s"], "command": "simple_sync"},
