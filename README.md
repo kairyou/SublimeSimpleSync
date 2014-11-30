@@ -1,12 +1,12 @@
 # SimpleSync
 
-Simple ST3 plugin that sync files to remotes. Sync gets done by `pscp.exe`, SSH key authentication (Recommended) and password authentication are supported.
+A basic Sublime Text 3 plugin that listens to `save` event and [r]sync the file to remote automatically.
 
 ## Installation
 
-Just clone this project into your ST Packages folder:
+Clone this project into `Packages` folder:
 
-``` bash
+```bash
 cd [...]/Sublime Text 3/Data/Packages
 git clone https://github.com/ushuz/SimpleSync.git
 ```
@@ -19,38 +19,13 @@ Sample settings:
 
 ``` javascript
 {
-  "config": {
-    "autoSync": false,
-    "debug": false,
-    "timeout": 10
-  },
-  "rules": [
-    {
-      "type": "ssh",
-      "host": "domain or ip",
-      "port": "22",
-      "username": "userName",
-      "password": "passWord",
-      "local" : "/Users/user/projects",
-      "remote" : "/home/user/projects"
-    },
-    {
-      "type" : "local",
-      "local" : "C:\\Users\\user\\projects",
-      "remote" : "D:\\Dropbox\\projects"
-    }
-  ]
+  "local": "/Users/user/projects",
+  "remote": "/Users/user/projects",
+  "init": "~/.bash_profile",        // Shell initialization file like `.bash_profile` or `.bashrc`
+  "command": "rsync -avz",          // SimpleSync will use "[LOCAL_FILE_PATH] [REMOTE_FILE_PATH]" as arguments
+  "timeout": 10,                    // Command execution timeout
 }
 ```
-
-## Add key bindings
-
-Preferences > Key Bindings - User
-
-    { "keys": ["alt+s"], "command": "sublime_simple_sync"},
-    { "keys": ["alt+shift+s"], "command": "sublime_simple_sync_path"},
-
-Files are saved to remote server automatically when you save them locally. In case of "local" syncing, they are copied to "remote" folder which is on the same machine.
 
 ## Contributors
 
