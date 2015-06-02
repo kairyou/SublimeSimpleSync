@@ -1,12 +1,12 @@
 # -*- coding: utf-8 -*-
 
 import os
-import platform
-import sublime
-import sublime_plugin
+import shlex
 import subprocess
 import threading
-import zipfile
+
+import sublime
+import sublime_plugin
 
 
 PACKAGE_NAME = "SimpleSync"
@@ -35,28 +35,37 @@ class SimpleSyncCommand(sublime_plugin.EventListener):
 
         local = self.settings.get("local")
         remote = self.settings.get("remote")
-        command = self.settings.get("command")
-        bash_profile = self.settings.get("init", "")
 
         local_path = view.file_name()
-        if not local_path.startswith(local):
+        if not local_path or not local_path.startswith(local):
             return
         remote_path = remote + local_path.replace(local, "")
 
-        cmd = ". {} && {} {} {}".format(bash_profile, command, local_path, remote_path)
-        print("%s: Execute" % PACKAGE_NAME, cmd)
-        Command(cmd).run(10)
+        path = self.settings.get("path", "")
+        path = os.path.expanduser(path) + ":" + os.environ.get("PATH")
+        print("{}: PATH".format(PACKAGE_NAME), path)
+
+        timeout = self.settings.get("timeout", 10)
+        print("{}: Timeout".format(PACKAGE_NAME), timeout)
+
+        command = self.settings.get("command")
+        cmd = command.format(local_path, remote_path)
+        print("{}: Execute".format(PACKAGE_NAME), cmd)
+
+        Command(cmd).run(timeout, env=dict(PATH=path))
 
 
 class Command(object):
     def __init__(self, cmd):
-        self.cmd = cmd
+        self.cmd = shlex.split(cmd)
         self.process = None
 
-    def run(self, timeout=10, shell=True):
+    def run(self, timeout=10, env=None):
         def target():
-            self.process = subprocess.Popen(self.cmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, shell=shell)
-            stdout, _ = self.process.communicate()
+            self.process = subprocess.Popen(
+                self.cmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
+                env=env)
+            stdout, stderr = self.process.communicate()
             print('%s:' % PACKAGE_NAME, stdout)
 
         thread = threading.Thread(target=target)
@@ -67,12 +76,8 @@ class Command(object):
         if thread.is_alive():
             print('%s:' % PACKAGE_NAME, 'Timedout')
             self.process.terminate() # kill proc
+            self.process.kill()
             thread.join()
-
-
-        def show_loading():
-            msg = 'Completed!' if self.success else 'Sync failed!'
-            sublime.status_message('%s: %s' % (PACKAGE_NAME, msg))
 
         def show_msg(msg):
             find_msg = msg.lower()

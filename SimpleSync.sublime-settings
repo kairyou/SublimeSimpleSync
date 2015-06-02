@@ -1,7 +1,6 @@
 {
-  "local": "/Users/user/projects",
-  "remote": "/Users/user/projects",
-  "init": "~/.bash_profile",        // Shell initialization file like `.bash_profile` or `.bashrc`
-  "command": "rsync -avz",          // SimpleSync will run "command $LOCAL_FILE_PATH $REMOTE_FILE_PATH"
-  "timeout": 10,                    // Command execution timeout
+  "local": "/Users/John/projects",
+  "remote": "/Users/John/projects",
+  "command": "rsync -avz {} remote:{}",  // SimpleSync will call `command.format(local_file_path, remote_file_path)`
+  "timeout": 10,                         // Command execution timeout
 }
