@@ -6,12 +6,22 @@
     "caption": "Package Settings",
     "mnemonic": "P",
     "id": "package-settings",
-    "children": [
-      {
-          "command": "open_file",
-          "args": {"file": "${packages}/User/SublimeSimpleSync.sublime-settings"},
-          "caption": "*SublimeSimpleSync*"
-      }
-    ]
+    "children": [{
+      "caption": "Sublime Simple Sync",
+      "mnemonic": "sss",
+      "id": "SublimeSimpleSync-settings",
+      "children": [
+        {
+        "command": "open_file",
+        "args": {"file": "${packages}/SublimeSimpleSync/SublimeSimpleSync.sublime-settings"},
+        "caption": "Setting - Default"
+        },
+        {
+         "command": "open_file",
+        "args": {"file": "${packages}/User/SublimeSimpleSync.sublime-settings"},
+        "caption": "Setting - User" 
+        }
+      ]
+    }]
   }]
 }]
