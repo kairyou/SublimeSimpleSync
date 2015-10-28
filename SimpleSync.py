@@ -47,11 +47,11 @@ class SimpleSyncCommand(sublime_plugin.EventListener):
 
         timeout = self.settings.get("timeout", 10)
 
-        command = self.settings.get("command")
-        cmd = command.format(local_path, remote_path)
-        print("{}: Execute".format(PACKAGE_NAME), cmd)
-
-        Command(cmd).run(timeout, env=dict(PATH=path))
+        commands = self.settings.get("commands") or filter(None, [self.settings.get("command")])
+        for cmd in commands:
+            cmd = cmd.format(local=local_path, remote=remote_path)
+            print("{}: EXEC".format(PACKAGE_NAME), cmd)
+            Command(cmd).run(timeout, env=dict(PATH=path))
 
 
 class Command(object):
