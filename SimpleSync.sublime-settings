@@ -1,6 +1,24 @@
 {
   "local": "/Users/John/projects",
   "remote": "/Users/John/projects",
-  "command": "rsync -avz {} remote:{}",  // SimpleSync will call `command.format(local_file_path, remote_file_path)`
-  "timeout": 10,                         // Command execution timeout
+
+  // If you want to execute commands outside system default path (i.e. :/usr/bin:/bin:/usr/sbin:/sbin),
+  // you will have to provide the path here. Seperate paths by `:` if you have more than one.
+  "path": "~/myhandycommands:/usr/local/bin",
+
+  // SimpleSync will pass local and remote file paths variables when formatting
+  // command, the call looks like this:
+  // `command.format(local=local_file_path, remote=remote_file_path)`
+  "command": "rsync -avz {local} remote:{remote}",
+
+  // You can specify multiple commands to execute, that's pretty neat if you
+  // have multiple destinations.
+  // If `commands` is provided, `command` will be ignored.
+  "commands": [
+    "rsync -avz {local} remote1:{remote}",
+    "rsync -avz {local} remote2:{remote}",
+  ],
+
+  // Specify command execution timeout, defaults to 10.
+  "timeout": 10,
 }
