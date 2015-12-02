@@ -63,7 +63,7 @@ class Command(object):
         def target():
             self.process = subprocess.Popen(
                 self.cmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
-                env=env)
+                env=env, start_new_session=True)
             stdout, stderr = self.process.communicate()
             print('%s:' % PACKAGE_NAME, stdout)
 
@@ -75,7 +75,7 @@ class Command(object):
         if thread.is_alive():
             print('%s:' % PACKAGE_NAME, 'Timedout')
             self.process.terminate() # kill proc
-            self.process.kill()
+            self.process.wait()
             thread.join()
 
         def show_msg(msg):
