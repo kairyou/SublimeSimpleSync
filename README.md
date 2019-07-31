@@ -60,6 +60,17 @@ Preferences > Key Bindings - User
 
 Files are saved to remote server automatically when you save them locally. In case of "local" syncing, they are copied to "remote" folder which is on the same machine.
 
+## FAQs
+- Error: `/bin/sh: 2: expect: not found`
+
+  Please install the dependencies via terminal:
+  ```sh
+  # Debian/Ubuntu:
+  sudo apt-get update; sudo apt-get install expect;
+  # RHEL, Fedora, CentOS:
+  sudo yum install expect;
+  ```
+
 ## Contributors
 
 * [tnhu](https://github.com/tnhu)
