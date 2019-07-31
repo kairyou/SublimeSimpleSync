@@ -8,7 +8,6 @@
     "id": "package-settings",
     "children": [{
       "caption": "Sublime Simple Sync",
-      "mnemonic": "sss",
       "id": "SublimeSimpleSync-settings",
       "children": [
         {
