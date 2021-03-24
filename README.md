@@ -79,7 +79,7 @@ Files are saved to remote server automatically when you save them locally. In ca
 * [jan11011977](https://github.com/jan11011977)
 * [FC3D](https://github.com/FC3D)
 
-* [中文文档](http://www.fantxi.com/blog/archives/sublime-simple-sync/)
+* [中文文档](https://xhl.me/archives/sublime-simple-sync/)
 
 ## License
 
