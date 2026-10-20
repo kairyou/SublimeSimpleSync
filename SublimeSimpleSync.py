@@ -5,6 +5,7 @@
 #
 
 import os
+import fnmatch
 # import sys
 import platform
 import subprocess
@@ -41,6 +42,57 @@ def _is_path_within(path, root):
         return False
 
 
+def _is_excluded(path, root, patterns):
+    """Return whether a file matches one of the rule's exclude patterns."""
+    if not patterns:
+        return False
+
+    relative = os.path.relpath(path, root).replace(os.sep, '/')
+    parts = relative.split('/')
+    for raw_pattern in patterns:
+        pattern = raw_pattern.replace('\\', '/')
+        directory_only = pattern.endswith('/')
+        pattern = pattern.rstrip('/')
+        anchored = pattern.startswith('/')
+        pattern = pattern.lstrip('/')
+
+        if not pattern:
+            continue
+        if directory_only:
+            parts_to_match = parts[:-1]
+            if '/' in pattern:
+                directory_path = '/'.join(parts_to_match)
+                if (fnmatch.fnmatch(directory_path, pattern) or
+                        (not anchored and
+                         _match_at_any_depth(parts_to_match, pattern))):
+                    return True
+            elif ((anchored and fnmatch.fnmatch('/'.join(parts_to_match), pattern)) or
+                    (not anchored and
+                     any(fnmatch.fnmatch(part, pattern) for part in parts_to_match))):
+                return True
+            continue
+
+        if fnmatch.fnmatch(relative, pattern):
+            return True
+        if not anchored and _match_at_any_depth(parts, pattern):
+            return True
+        if not anchored and any(fnmatch.fnmatch(part, pattern) for part in parts):
+            return True
+    return False
+
+
+def _match_at_any_depth(parts, pattern):
+    """Match a **/ pattern against the path at any directory depth."""
+    if not pattern.startswith('**/'):
+        return False
+
+    pattern = pattern[3:]
+    for index in range(len(parts)):
+        if fnmatch.fnmatch('/'.join(parts[index:]), pattern):
+            return True
+    return False
+
+
 class syncCommand():
 
     # get settings
@@ -72,6 +124,8 @@ class syncCommand():
         # print('+++ syncCommand: ', syncItems)
         if (len(syncItems) > 0):
             for item in syncItems:
+                if _is_excluded(localFile, item['local'], item.get('exclude', [])):
+                    continue
                 # fix path(/)
                 relPath = os.path.relpath(localFile, item['local'])
                 remoteFile = item['remote'] + '/' + relPath

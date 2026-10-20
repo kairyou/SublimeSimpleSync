@@ -40,16 +40,20 @@ Sample settings:
     "type": "ssh", "host": "domain or ip", "port": "22",
     "username": "userName", "password": "passWord", // support windows/Mac/linux
     "local" : "/Users/projects/projectA",
-    "remote" : "/home/projectA/"
+    "remote" : "/home/projectA/",
+    "exclude" : ["*.bak", ".git/", "node_modules/"]
   },
   {
     "type" : "local",
     "local" : "E:\\projectFolder\\projectA",
-    "remote" : "D:\\bakup\\projectA"
+    "remote" : "D:\\bakup\\projectA",
+    "exclude" : ["*.bak", ".git/", "node_modules/"]
   }
   ]
 }
 ```
+
+The optional `exclude` list applies per rule. A trailing `/` matches directories, while a leading `/` anchors the pattern to the local root. For example, `*.bak` excludes backup files, `node_modules/` excludes that directory at any depth, and `/build/` excludes only the root `build` directory.
 
 ## Add key bindings
 
