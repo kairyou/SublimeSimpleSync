@@ -26,6 +26,21 @@ IS_GTE_ST3 = int(sublime.version()[0]) >= 3
 VERSION = '20140721' #version
 
 
+def _is_path_within(path, root):
+    """Return whether *path* is inside *root* (including the root itself)."""
+    try:
+        path = os.path.abspath(os.path.normpath(path))
+        root = os.path.abspath(os.path.normpath(root))
+        relative = os.path.relpath(path, root)
+        return relative == os.curdir or (
+            relative != os.pardir and
+            not relative.startswith(os.pardir + os.sep)
+        )
+    except ValueError:
+        # On Windows, paths on different drives have no common path.
+        return False
+
+
 class syncCommand():
 
     # get settings
@@ -47,7 +62,7 @@ class syncCommand():
         # print(localFile, self.rules)
         for item in self.rules:
             # print(localFile.startswith(item['local']), localFile, item['local'])
-            if localFile.startswith(item['local']):
+            if _is_path_within(localFile, item['local']):
                 ret += [item]
         return ret
 
@@ -58,7 +73,7 @@ class syncCommand():
         if (len(syncItems) > 0):
             for item in syncItems:
                 # fix path(/)
-                relPath = localFile.replace(item['local'], '')
+                relPath = os.path.relpath(localFile, item['local'])
                 remoteFile = item['remote'] + '/' + relPath
                 # print('********', remoteFile)
                 if (item['type'] == 'ssh'):
@@ -292,7 +307,18 @@ class ScpCopier(threading.Thread, syncCommand):
                     self.success = True
         try:
             if OS == 'Windows':
-                retcode = subprocess.call(run_cmd)
+                startupinfo = None
+                startupinfo_class = getattr(subprocess, 'STARTUPINFO', None)
+                if startupinfo_class:
+                    startupinfo = startupinfo_class()
+                    startupinfo.dwFlags |= getattr(subprocess, 'STARTF_USESHOWWINDOW', 0)
+                    startupinfo.wShowWindow = getattr(subprocess, 'SW_HIDE', 0)
+                creationflags = getattr(subprocess, 'CREATE_NO_WINDOW', 0)
+                retcode = subprocess.call(
+                    run_cmd,
+                    startupinfo=startupinfo,
+                    creationflags=creationflags
+                )
                 if self.debug:
                     print('returncode:', retcode)
                 if retcode != 0:
